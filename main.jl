@@ -199,3 +199,5 @@ x, y = main(result, dt, t_end)
 plot(x[1,200:240], y[1,200:240], lw=3, linestyle=:dashdot)
 plot!(x[2,200:240], y[2,200:240], lw=3, linestyle=:dashdot)
 
+savefig("brol.pdf")
+
