@@ -24,8 +24,8 @@ m = 1
 ϵ, σ = 1, 1
 L, r_cut = 25, 2.5σ
 N = 2
-t_end = 10
-dt = 1e-2
+t_end = 5
+dt = 1e-3
 l = r_cut
 ####################################
 nc = Int64(div(L, r_cut, RoundDown))
@@ -57,39 +57,32 @@ for i = 1:nc
     end
 end
 
-
-x = init_x(N)
-v = init_v(N)
-
-
 #Initialize Grid
-#append!(result[1,1], [Particle(m, [0,0], x[:,i], v[:,i], [0,0]) for i in 1:N])
+#append!(result[1,1], [Particle(m, [0,0], x[:,i], v[:,i], [0,0], [0, 0]) for i in 1:N])
 
-append!(result[5,1], [Particle(m, [1, 11], [5, 0], [0, 0], [0,0])])
+append!(result[1, 1], [Particle(m, [2, 2], [-1, -.5], [0, 0], [0,0])])
 
-append!(result[5,10], [Particle(m, [24, 11], [-5, 0], [0, 0], [0,0])])
+#push!(result[5,10], [Particle(m, [24, 11], [-.1, 0], [0, 0], [0,0])])
 
 result
 
 # Calculate new F in neighourhood 
 function compF_LC(grid, nc, r_cut)
+    #Loop over cells
     for i = 1:nc
         for j = 1:nc
-            for k in grid[i, j]
-                k.F = [0, 0]
-            end
-        end
-    end
-    for i = 1:nc
-        for j = 1:nc
-            for k in grid[i, j]
-                for l = i-1:i+1
-                    for m = j-1:j+1
-                        if m > 0 && m <= nc
-                            if l > 0 && l <= nc
-                                for n in grid[l, m]
-                                    if k != n
-                                        force(k, n, r_cut)
+            #Loop over elements in cell
+            if length(grid[i, j]) > 0
+                #Loop over neighbourhood cells of each element
+                for el1 in grid[i, j]
+                    for k in i-1:i+1
+                        for l in j-1:j+1
+                            if (i-1) > 0 && (i+1) <= nc
+                                if (j-1) > 0 && (j+1) <= nc
+                                    for el2 in grid[k, l]
+                                        if el1 != el2
+                                            force(el1, el2, r_cut)
+                                        end
                                     end
                                 end
                             end
@@ -136,25 +129,38 @@ end
 function moveParticles_LC(grid, nc, l)
     for i = 1:nc
         for j = 1:nc
-            for m in grid[i, j]
-                for k = 1:2
-                    if m.x[k] < 0 || m.x[k] > L
-                        m.v[k] = -m.x[k]
+            ## Reflecting boundaries
+            for k in grid[i, j]
+                for m = 1:2
+                    if k.x[m] <= 0
+                        k.v[m] = -k.v[m]
+                        k.x[m] = 1e-3 #Small positive required, see lline 147
                     end
+                    if k.x[m] > L
+                        k.v[m] = -k.v[m]
+                        k.x[m] = L
+                    end
+                end
+            end
+            ## Move back to correct cell
+            for k in grid[i, j]
+                true_col = Int(div(k.x[1], r_cut, RoundUp))
+                true_row = Int(div(k.x[2], r_cut, RoundUp))
+                if true_col != j || true_row != i
+                    push!(grid[true_row, true_col], k)
+                    filter!(e->e!=k, grid[i, j])
                 end
             end
         end
     end
 end
 
-
 function force(p1, p2, r_cut)
-    r_vector = p2.x - p1.x
     rmag = norm(p1.x - p2.x)
+    r_vector = (p2.x - p1.x)/rmag ## Normalized vector
     if rmag <= r_cut
         s = (σ/rmag)^6
-        f = 24ϵ*(s/rmag)*(1-2s)*r_vector
-        p1.F = p1.F + f
+        p1.F = 24ϵ*(s)*(1-2s)*r_vector
     end
 end
 
@@ -162,9 +168,8 @@ end
 # N = amount of particles
 # n = amount of datapoints
 function timeIntegration_LC(t::Real, dt::Real, t_end::Real, grid, n::Int64)
-    result_x = zeros(N,n+1)
-    result_y = zeros(N,n+1)
-    compF_LC(grid, nc, r_cut)
+    result_x = zeros(n+1, N)
+    result_y = zeros(n+1, N)
     count = 0
     while (t < t_end)
         count += 1
@@ -178,9 +183,10 @@ function timeIntegration_LC(t::Real, dt::Real, t_end::Real, grid, n::Int64)
                 if length(grid[i, j]) > 0
                     for k in grid[i, j]
                         z += 1
-                        result_x[z, count] = k.x[1]
-                        result_y[z, count] = k.x[2]
+                        result_x[count, z] = k.x[1]
+                        result_y[count, z] = k.x[2]
                     end
+                    z = 0
                 end
             end
         end
@@ -190,14 +196,16 @@ end
 
 function main(grid, dt, t_end)
     n = Int(t_end/dt)
-    result_x, result_y = timeIntegration_LC(0, dt, t_end, grid, n)
+    result_x, result_y = timeIntegration_LC(0, 0.1, 50, grid, n)
     return result_x, result_y
 end
 
 x, y = main(result, dt, t_end)
 
-plot(x[1,200:240], y[1,200:240], lw=3, linestyle=:dashdot)
-plot!(x[2,200:240], y[2,200:240], lw=3, linestyle=:dashdot)
+scatter([x[1,1]], [y[1,1]],  xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5)
 
-savefig("brol.pdf")
 
+anim = @animate for i ∈ 1:50
+    scatter([x[i,1]], [y[i,1]], i, xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5, title="V₀ = [-1, -0.5]")
+end
+gif(anim, "images/anim.gif")
