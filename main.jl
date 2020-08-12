@@ -1,4 +1,4 @@
-using Plots, LinearAlgebra, Random
+using Plots, LinearAlgebra, Random, Animations
 
 mutable struct Particle
     m
@@ -21,10 +21,10 @@ end
 ####################################
 ## Enter parameters
 m = 1
-ϵ, σ = 1, 1
+ϵ, σ = 100, 1
 L, r_cut = 25, 2.5σ
 N = 2
-t_end = 5
+t_end = 10
 dt = 1e-3
 l = r_cut
 ####################################
@@ -60,9 +60,8 @@ end
 #Initialize Grid
 #append!(result[1,1], [Particle(m, [0,0], x[:,i], v[:,i], [0,0], [0, 0]) for i in 1:N])
 
-append!(result[1, 1], [Particle(m, [2, 2], [-1, -.5], [0, 0], [0,0])])
-
-#push!(result[5,10], [Particle(m, [24, 11], [-.1, 0], [0, 0], [0,0])])
+append!(result[1, 1], [Particle(m, [3, 2], [0, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [1, 2], [0, 0], [0, 0], [0,0])])
 
 result
 
@@ -77,8 +76,8 @@ function compF_LC(grid, nc, r_cut)
                 for el1 in grid[i, j]
                     for k in i-1:i+1
                         for l in j-1:j+1
-                            if (i-1) > 0 && (i+1) <= nc
-                                if (j-1) > 0 && (j+1) <= nc
+                            if k > 0 && k <= nc
+                                if l > 0 && l <= nc
                                     for el2 in grid[k, l]
                                         if el1 != el2
                                             force(el1, el2, r_cut)
@@ -168,8 +167,8 @@ end
 # N = amount of particles
 # n = amount of datapoints
 function timeIntegration_LC(t::Real, dt::Real, t_end::Real, grid, n::Int64)
-    result_x = zeros(n+1, N)
-    result_y = zeros(n+1, N)
+    result_x = zeros(n, N)
+    result_y = zeros(n, N)
     count = 0
     while (t < t_end)
         count += 1
@@ -180,13 +179,12 @@ function timeIntegration_LC(t::Real, dt::Real, t_end::Real, grid, n::Int64)
         compV_LC(grid, nc, l ,dt)
         for i = 1:nc
             for j = 1:nc
-                if length(grid[i, j]) > 0
+                if length(grid[i, j]) > 0 && count < n
                     for k in grid[i, j]
                         z += 1
                         result_x[count, z] = k.x[1]
                         result_y[count, z] = k.x[2]
                     end
-                    z = 0
                 end
             end
         end
@@ -196,16 +194,20 @@ end
 
 function main(grid, dt, t_end)
     n = Int(t_end/dt)
-    result_x, result_y = timeIntegration_LC(0, 0.1, 50, grid, n)
+    result_x, result_y = timeIntegration_LC(0, dt, t_end, grid, n)
     return result_x, result_y
 end
 
 x, y = main(result, dt, t_end)
 
 scatter([x[1,1]], [y[1,1]],  xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5)
+scatter!([x[1,2]], [y[1,2]],  xlims=(0,25), ylims=(0,25), legend=false, color=:blue, markersize=5)
 
 
-anim = @animate for i ∈ 1:50
-    scatter([x[i,1]], [y[i,1]], i, xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5, title="V₀ = [-1, -0.5]")
-end
-gif(anim, "images/anim.gif")
+anim = @animate for i = 1:5000
+    scatter([x[i,1]], [y[i,1]],  xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5)
+    scatter!([x[i,2]], [y[i,2]],  xlims=(0,25), ylims=(0,25), legend=false, color=:blue, markersize=5)
+end every 500
+
+gif(anim, "images/test.gif", fps=24)
+
