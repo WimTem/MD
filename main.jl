@@ -21,7 +21,7 @@ end
 ####################################
 ## Enter parameters
 m = 1
-ϵ, σ = 10, 1
+ϵ, σ = 010, 1
 L, r_cut = 25, 2.5σ
 N = 4
 t_end = 50
@@ -60,10 +60,10 @@ end
 #Initialize Grid
 #append!(result[1,1], [Particle(m, [0,0], x[:,i], v[:,i], [0,0], [0, 0]) for i in 1:N])
 
-append!(result[1, 1], [Particle(m, [2, 1], [0, 0], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [2, 2], [0, 0], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [1, 2], [0, 0], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [1, 1], [0, 0], [0, 0], [0,0])])
+append!(result[1, 1], [Particle(m, [6+cos(π/3), 10], [0, -20], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [6+cos(π/3), 2+sin(π/3)], [0, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [7, 2], [0, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [6,2], [0, 0], [0, 0], [0,0])])
 
 result
 
@@ -209,11 +209,8 @@ scatter!([x[1,2]], [y[1,2]],  xlims=(0,25), ylims=(0,25), legend=false, color=:b
 
 
 anim = @animate for i = 1:1000
-    scatter([x[i,1]], [y[i,1]],  xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5)
-    scatter!([x[i,2]], [y[i,2]],  xlims=(0,25), ylims=(0,25), legend=false, color=:blue, markersize=5)
-    scatter!([x[i,3]], [y[i,3]],  xlims=(0,25), ylims=(0,25), legend=false, color=:green, markersize=5)
-    scatter!([x[i,4]], [y[i,4]],  xlims=(0,25), ylims=(0,25), legend=false, color=:brown, markersize=5)
+    scatter(x[i,:], y[i,:],  xlims=(0,25), ylims=(0,25), legend=false, palette=:blues, markersize=5)
 end every 50
 
-gif(anim, "images/test3.gif", fps=10)
+gif(anim, "images/cannon.gif", fps=10)
 
