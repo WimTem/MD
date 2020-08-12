@@ -21,10 +21,10 @@ end
 ####################################
 ## Enter parameters
 m = 1
-ϵ, σ = 010, 1
+ϵ, σ = 10, 1
 L, r_cut = 25, 2.5σ
 N = 4
-t_end = 50
+t_end = 100
 dt = 1e-3
 l = r_cut
 ####################################
@@ -60,10 +60,10 @@ end
 #Initialize Grid
 #append!(result[1,1], [Particle(m, [0,0], x[:,i], v[:,i], [0,0], [0, 0]) for i in 1:N])
 
-append!(result[1, 1], [Particle(m, [6+cos(π/3), 10], [0, -20], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [6+cos(π/3), 2+sin(π/3)], [0, 0], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [7, 2], [0, 0], [0, 0], [0,0])])
-append!(result[1,1], [Particle(m, [6,2], [0, 0], [0, 0], [0,0])])
+append!(result[1, 1], [Particle(m, [12,12], [0, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [12, 13], [0, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [14, 2], [-10, 0], [0, 0], [0,0])])
+append!(result[1,1], [Particle(m, [4,2], [10, 0], [0, 0], [0,0])])
 
 result
 
@@ -202,15 +202,15 @@ end
 
 x, y = main(result, dt, t_end)
 
-
+x
 
 scatter([x[1,1]], [y[1,1]],  xlims=(0,25), ylims=(0,25), legend=false, color=:red, markersize=5)
 scatter!([x[1,2]], [y[1,2]],  xlims=(0,25), ylims=(0,25), legend=false, color=:blue, markersize=5)
 
 
-anim = @animate for i = 1:1000
+anim = @animate for i = 1:10000
     scatter(x[i,:], y[i,:],  xlims=(0,25), ylims=(0,25), legend=false, palette=:blues, markersize=5)
-end every 50
+end every 1000
 
-gif(anim, "images/cannon.gif", fps=10)
+gif(anim, "images/evenwicht_realtime.gif", fps=24)
 
