@@ -23,6 +23,7 @@
                     end
                 end
             end
+
         end
         return result_x, result_y
     end
@@ -30,8 +31,10 @@
     function compX_LC(grid, dt, r_cut, L, nc)
         for i = 1:nc
             for j = 1:nc
-                for k in grid[i, j]
-                    updateX(k, dt)
+                if length(grid[i,j]) > 0
+                    for k in grid[i, j]
+                        updateX(k, dt)
+                    end
                 end
             end
         end
@@ -90,25 +93,27 @@
         for i = 1:nc
             for j = 1:nc
                 ### Reflecting boundaries
-                for k in grid[i, j]
-                    for m = 1:2
-                        if k.x[m] <= 0
-                            k.v[m] = -k.v[m]
-                            k.x[m] = 1e-3 #Small positive required, see line 147
-                        end
-                        if k.x[m] > L
-                            k.v[m] = -k.v[m]
-                            k.x[m] = L
+                if length(grid[i, j]) > 0
+                    for k in grid[i, j]
+                        for m = 1:2
+                            if k.x[m] <= 0
+                                k.v[m] = -k.v[m]
+                                k.x[m] = 1e-3 #Small positive required, see line 147
+                            end
+                            if k.x[m] > L
+                                k.v[m] = -k.v[m]
+                                k.x[m] = L
+                            end
                         end
                     end
-                end
                 ## Move back to correct cell
-                for k in grid[i, j]
-                    true_col = Int(div(k.x[1], r_cut, RoundUp))
-                    true_row = Int(div(k.x[2], r_cut, RoundUp))
-                    if true_col != j || true_row != i
-                        push!(grid[true_row, true_col], k)
-                        filter!(e->e!=k, grid[i, j])
+                    for k in grid[i, j]
+                        true_col = Int(div(k.x[1], r_cut, RoundUp))
+                        true_row = Int(div(k.x[2], r_cut, RoundUp))
+                        if true_col != j || true_row != i
+                            push!(grid[true_row, true_col], k)
+                            filter!(e->e!=k, grid[i, j])
+                        end
                     end
                 end
             end
@@ -124,22 +129,28 @@
         end
     end
 
-    function run(grid, dt, t_end, r_cut, σ, ϵ, L, nc)
-        N = count(grid, nc)
+    function run(particles, dt, t_end, r_cut, σ, ϵ, L, nc)
+        N = length(particles)
+        grid = grid_init(particles, nc, L, r_cut)
         n = Int(t_end/dt)
         result_x, result_y = timeIntegration_LC(0, dt, t_end, grid, N, n, r_cut, σ, ϵ, L, nc)
         return result_x, result_y
     end
 
-    function count(result, nc)
-        N = 0
+    function grid_init(particles, nc, L, r_cut)
+        grid = Array{Any}(undef, nc, nc)
         for i = 1:nc
             for j = 1:nc
-                N += length(result[i, j])
+                grid[i, j] = Array{Any}(undef, 0)
             end
         end
-        return N
+        for i in particles
+            push!(grid[1, 1], i)
+        end
+        moveParticles_LC(grid, nc, L, r_cut)
+        return grid
     end
+        
 
     function uniform_sampler(a, b)
         return rand(2,1)*(b-a) .+ a
@@ -161,3 +172,5 @@
         return result
     end
 end
+
+Array{Any, 0}
