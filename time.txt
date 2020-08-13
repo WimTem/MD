@@ -1,0 +1,9 @@
+2 Particles // dt = 0.1  0 <= t <= 10 r_cut=2.5 // Integrator: Verlet
+-LC Method:
+    0.003154 seconds (7.69 k allocations: 291.062 KiB)
+    0.003550 seconds (7.69 k allocations: 291.062 KiB)
+    0.003108 seconds (7.69 k allocations: 291.062 KiB)
+-Basis Method:
+    0.000691 seconds (5.05 k allocations: 270.094 KiB)
+    0.000408 seconds (5.05 k allocations: 270.094 KiB)
+    0.000429 seconds (5.05 k allocations: 270.094 KiB)
