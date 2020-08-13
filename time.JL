@@ -33,7 +33,7 @@ x_basis, y_basis = @time basis_verlet.run([p1, p2], 0.1, 10, 2.5, 1, 1, 25)
 
 
 
-scatter(y_basis, label="Base method", layout=(2,1), legend=:outertopleft)
+scatter(y_basis, label=["Base method"], layout=(2,1), title=["Particle1" "Particle2"], legend=:outertopleft)
 scatter!(y_LC, label="LC method", layout=(2,1), legend=:outertopleft)
 
-savefig("Indrukwekkende nauwkeurigheid.pdf")
+savefig("topresultaat.pdf")
