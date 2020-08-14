@@ -63,15 +63,7 @@
     end
 
     function compF_LC(grid, σ, ϵ, r_cut, nc)
-        function legal(x)
-            return filter!(e->1<=e<=10, x-1:x+1 |> collect)
-        end
-        
-        function neighbour_cells(x, y)
-            return Iterators.product(legal(x)[1]:legal(x)[end], legal(y)[1]:legal(y)[end]) |> collect
-        end
-        
-        for i in Iterators.product(1:10, 1:10) |> collect
+        for i in Iterators.product(1:nc, 1:nc) |> collect
             for p1 in grid[i[1], i[2]]
                 for j in neighbour_cells(i[1], i[2])
                     for p2 in grid[j[1], j[2]]
@@ -167,7 +159,17 @@
         moveParticles_LC(grid, nc, L, r_cut)
         return grid
     end
-        
+    
+
+    ### Auxiliary functions ###
+
+    function legal(x)
+        return filter!(e->1<=e<=10, x-1:x+1 |> collect)
+    end
+    
+    function neighbour_cells(x, y)
+        return Iterators.product(legal(x)[1]:legal(x)[end], legal(y)[1]:legal(y)[end]) |> collect
+    end
 
     function uniform_sampler(a, b)
         return rand(2,1)*(b-a) .+ a
