@@ -1,0 +1,25 @@
+Idee: O(n^2) -> O(n^2/2)
+
+Kracht F uitgeoefend door p2 op p1 = kracht -F uitgeoefend door p1 op p2
+Dwing compF_basis() af om enkel de unieke combinaties van deeltjes te genereren.
+
+Laptop: Medium performance
+
+zie basis_verlet_timetrials.jl voor methode/params
+zie functie compF_basis() voor implementatie
+
+TE DOEN: ditto voor LC_verlet
+
+50 willekeurige deeltjes, random beginsnelheden
+
+Methode 1 trials O(n^2)
+1.171041 seconds (23.15 M allocations: 1.106 GiB, 6.25% gc time)
+1.129508 seconds (22.83 M allocations: 1.101 GiB, 6.49% gc time)
+1.174203 seconds (24.13 M allocations: 1.120 GiB, 6.35% gc time)
+
+Methode 2 trials O(n^2/2)
+0.820769 seconds (13.70 M allocations: 712.504 MiB, 6.95% gc time)
+0.684616 seconds (13.13 M allocations: 698.884 MiB, 7.39% gc time)
+0.626414 seconds (12.19 M allocations: 684.644 MiB, 7.09% gc time)
+
+

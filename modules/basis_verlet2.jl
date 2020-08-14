@@ -1,4 +1,4 @@
-module basis_verlet
+module basis_verlet2
     using LinearAlgebra
 
     function timeIntegration_basis(t::Real, dt::Real, t_end::Real, p, N::Int64, n::Int64, r_cut::Real, σ::Real, ϵ::Real, L::Real)
@@ -71,8 +71,10 @@ module basis_verlet
         end
         for i = 1:N
             for j = 1:N
-                if i != j
-                    p[i].F = force(p[i], p[j], r_cut, σ, ϵ)
+                if i < j
+                    f = force(p[i], p[j], r_cut, σ, ϵ)
+                    p[i].F = f
+                    p[j].F = -f
                 end
             end
         end
