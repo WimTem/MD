@@ -1,0 +1,9 @@
+LC_verlet.jl 74-82 geeft de nieuwe methode. Ziet er in ieder geval al cleaner uit.
+Wil nog snelheden testen tussen beide blokken code.
+
+trajectories.pdf vergelijkt de banen van de basismethode en de LC-methode
+    => Nieuwe code lijkt ok te werken
+Kolom_wissel.pdf toont het wisselen van de deeltjes aan
+Uitmuntend.pdf illustreert het probleem nog beter (Pad berekend volgens LC-methode)
+
+
