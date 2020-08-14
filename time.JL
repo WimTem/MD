@@ -13,15 +13,18 @@ p2 = Particle.Part(1, [24, 24], [-1, -10], [0, 0], [0,0])
 
 x_LC, y_LC = @time LC_verlet.run([p1, p2], 1e-2, 10, 2.5, 1, 1, L, nc)
 
-p1 = Particle.Part(1, [1, 1], [0, 0], [0, 0], [0,0])
-p2 = Particle.Part(1, [1, 2], [0, 0], [0, 0], [0,0])
-x_basis, y_basis = @time basis_verlet.run([p1, p2], 1e-2, 1, 2.5, 1, 1, 25)
+p1 = Particle.Part(1, [1, 1], [1, 10], [0, 0], [0,0])
+p2 = Particle.Part(1, [24, 24], [-1, -10], [0, 0], [0,0])
+x_basis, y_basis = @time basis_verlet.run([p1, p2], 1e-2, 10, 2.5, 1, 1, L)
 
 
-scatter(y_LC, legend=:outertopleft)
-savefig("Y_coord.pdf")
+scatter(x_LC, y_LC, legend=:outertopleft, label="LC methode")
+scatter!(x_basis, y_basis, legend=:outertopleft, label="Basis methode")
+savefig("trajectories.pdf")
 
-
+for i in []
+    print("ja")
+end
 
 savefig("topresultaat.pdf")
 

@@ -63,30 +63,47 @@
     end
 
     function compF_LC(grid, σ, ϵ, r_cut, nc)
-        #Loop over cells
-        for i = 1:nc
-            for j = 1:nc
-                #Loop over elements in cell
-                if length(grid[i, j]) > 0
-                    #Loop over neighbourhood cells of each element
-                    for el1 in grid[i, j]
-                        for k in i-1:i+1
-                            for l in j-1:j+1
-                                if k > 0 && k <= nc
-                                    if l > 0 && l <= nc
-                                        for el2 in grid[k, l]
-                                            if el1 != el2
-                                                force(el1, el2, σ, ϵ, r_cut)
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
+        function legal(x)
+            return filter!(e->1<=e<=10, x-1:x+1 |> collect)
+        end
+        
+        function neighbour_cells(x, y)
+            return Iterators.product(legal(x)[1]:legal(x)[end], legal(y)[1]:legal(y)[end]) |> collect
+        end
+        
+        for i in Iterators.product(1:10, 1:10) |> collect
+            for p1 in grid[i[1], i[2]]
+                for j in neighbour_cells(i[1], i[2])
+                    for p2 in grid[j[1], j[2]]
+                        force(p1, p2, σ, ϵ, r_cut)
                     end
                 end
             end
         end
+        #Loop over cells
+        # for i = 1:nc
+        #     for j = 1:nc
+        #         #Loop over elements in cell
+        #         if length(grid[i, j]) > 0
+        #             #Loop over neighbourhood cells of each element
+        #             for el1 in grid[i, j]
+        #                 for k in i-1:i+1
+        #                     for l in j-1:j+1
+        #                         if k > 0 && k <= nc
+        #                             if l > 0 && l <= nc
+        #                                 for el2 in grid[k, l]
+        #                                     if el1 != el2
+        #                                         force(el1, el2, σ, ϵ, r_cut)
+        #                                     end
+        #                                 end
+        #                             end
+        #                         end
+        #                     end
+        #                 end
+        #             end
+        #         end
+        #     end
+        # end
     end
 
     function moveParticles_LC(grid, nc, L, r_cut)
@@ -172,5 +189,3 @@
         return result
     end
 end
-
-Array{Any, 0}
