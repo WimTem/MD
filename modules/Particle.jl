@@ -5,6 +5,9 @@ module Particle
         v
         F
         F_old
-        p(m, x, v, F, F_old) = new(m, x, v, F, F_old)
+        tag
+        function p(m, x, v, F, F_old) 
+            return new(m, x, v, F, F_old, 0)
+        end
     end
 end

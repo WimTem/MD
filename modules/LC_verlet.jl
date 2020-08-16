@@ -1,5 +1,5 @@
  module LC_verlet
-    using LinearAlgebra, Random
+    using LinearAlgebra, Random, Test
 
     function timeIntegration_LC(t::Real, dt::Real, t_end::Real, grid, N::Int64, n::Int64, r_cut, σ, ϵ, L, nc)
         result_x = zeros(n, N)
@@ -72,30 +72,6 @@
                 end
             end
         end
-        #Loop over cells
-        # for i = 1:nc
-        #     for j = 1:nc
-        #         #Loop over elements in cell
-        #         if length(grid[i, j]) > 0
-        #             #Loop over neighbourhood cells of each element
-        #             for el1 in grid[i, j]
-        #                 for k in i-1:i+1
-        #                     for l in j-1:j+1
-        #                         if k > 0 && k <= nc
-        #                             if l > 0 && l <= nc
-        #                                 for el2 in grid[k, l]
-        #                                     if el1 != el2
-        #                                         force(el1, el2, σ, ϵ, r_cut)
-        #                                     end
-        #                                 end
-        #                             end
-        #                         end
-        #                     end
-        #                 end
-        #             end
-        #         end
-        #     end
-        # end
     end
 
     function moveParticles_LC(grid, nc, L, r_cut)
@@ -107,7 +83,7 @@
                         for m = 1:2
                             if k.x[m] <= 0
                                 k.v[m] = -k.v[m]
-                                k.x[m] = 1e-3 #Small positive required, see line 147
+                                k.x[m] = 1e-3 #Small positive required, see line 97
                             end
                             if k.x[m] > L
                                 k.v[m] = -k.v[m]
@@ -117,16 +93,29 @@
                     end
                 ## Move back to correct cell
                     for k in grid[i, j]
-                        true_col = Int(div(k.x[1], r_cut, RoundUp))
-                        true_row = Int(div(k.x[2], r_cut, RoundUp))
-                        if true_col != j || true_row != i
-                            push!(grid[true_row, true_col], k)
-                            filter!(e->e!=k, grid[i, j])
+                        if k.tag == 0
+                            pos = div.(k.x, r_cut, RoundUp)  .|> Int64
+                            println("Cell: ", [i, j])
+                            println("Calc cell: ", pos)
+                            ## pos = [y, x]-coord
+                            if pos != [j, i]
+                                println("Moving particle...")
+                                filter!(e->e!=k, grid[i, j])
+                                push!(grid[pos[2], pos[1]], k)
+                                
+                            else
+                                println("No action required")
+                            end
+                            k.tag = 1
                         end
                     end
                 end
             end
         end
+        for i = 1:nc
+            for j = 1:nc
+                for k in grid[i, j]
+                    k.tag = 0
     end
 
     function force(p1, p2, σ, ϵ, r_cut)
@@ -156,7 +145,10 @@
         for i in particles
             push!(grid[1, 1], i)
         end
+        println(grid)
         moveParticles_LC(grid, nc, L, r_cut)
+        println("After init")
+        println(grid)
         return grid
     end
     
