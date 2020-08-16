@@ -49,8 +49,8 @@ module basis_verlet
     end
 
     function updateX(p, dt)
-        a = dt*0.5/p.m
-        p.x = p.x + dt*(p.v + a*p.F)
+#        a = dt*0.5/p.m
+        p.x += + dt*(p.v + (dt*0.5+p.m)*p.F)
         p.F_old = p.F
     end
 
@@ -85,14 +85,13 @@ module basis_verlet
     end
 
     function updateV(p, dt)
-        a = dt*0.5/p.m
-        p.v = p.v + a*(p.F + p.F_old)
+#        a = dt*0.5/p.m
+        p.v += (dt*0.5/p.m)*(p.F + p.F_old)
     end
 
     function run(particles, dt, t_end, r_cut, σ, ϵ, L)
         n = Int(t_end/dt)
         N = length(particles)
-        result_x, result_y = timeIntegration_basis(0, dt, t_end, particles, N, n, r_cut, σ, ϵ, L)
-        return result_x, result_y
+        return timeIntegration_basis(0, dt, t_end, particles, N, n, r_cut, σ, ϵ, L)
     end
 end

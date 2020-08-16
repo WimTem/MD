@@ -4,6 +4,7 @@ module basis_verlet2
     function timeIntegration_basis(t::Real, dt::Real, t_end::Real, p, N::Int64, n::Int64, r_cut::Real, σ::Real, ϵ::Real, L::Real)
         result_x = zeros(n, N)
         result_y = zeros(n, N)
+        result_e = zeros(n)
         count = 0
         for i = 1:n
             count += 1
@@ -13,14 +14,15 @@ module basis_verlet2
             for j = 1:N
                 result_x[count, j] = p[j].x[1]
                 result_y[count, j] = p[j].x[2]
+                result_e[count] = compoutStatistic_basis(p, N)
             end
         end
-        return result_x, result_y
+        return result_x, result_y, result_e
     end
 
-    function compoutStatistic_basis(p, N::Int64, t::Real)
+    function compoutStatistic_basis(p, N::Int64)
         e = 0
-        for i=1:N
+        for i = 1:N
             v = 0
             for j = 1:2
                 v += (p[i].v[j])^2
@@ -37,7 +39,7 @@ module basis_verlet2
             for j = 1:2
                 if p[i].x[j] <= 0
                     p[i].v[j] = -p[i].v[j]
-                    p[i].x[j] = 1e-3
+                    p[i].x[j] = 1e-6
                 end
                 if p[i].x[j] > L
                     p[i].v[j] = -p[i].v[j]
@@ -49,8 +51,8 @@ module basis_verlet2
     end
 
     function updateX(p, dt)
-        a = dt*0.5/p.m
-        p.x = p.x + dt*(p.v + a*p.F)
+#        a = dt*0.5/p.m
+        p.x += dt*(p.v + (dt*0.5/p.m)*p.F)
         p.F_old = p.F
     end
 
@@ -61,8 +63,8 @@ module basis_verlet2
     end
 
     function updateV(p, dt)
-        a = dt*0.5/p.m
-        p.v = p.v + a*(p.F + p.F_old)
+#        a = dt*0.5/p.m
+        p.v += (dt*0.5/p.m)*(p.F + p.F_old)
     end
 
     function compF_basis(p, N::Int64, r_cut, σ, ϵ)
@@ -94,7 +96,6 @@ module basis_verlet2
     function run(particles, dt, t_end, r_cut, σ, ϵ, L)
         n = Int(t_end/dt)
         N = length(particles)
-        result_x, result_y = timeIntegration_basis(0, dt, t_end, particles, N, n, r_cut, σ, ϵ, L)
-        return result_x, result_y
+        return timeIntegration_basis(0, dt, t_end, particles, N, n, r_cut, σ, ϵ, L)
     end
 end
