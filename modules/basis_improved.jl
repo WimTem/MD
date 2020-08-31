@@ -5,6 +5,7 @@ module basis_improved
         result_x = zeros(n, N)
         result_y = zeros(n, N)
         result_e = zeros(n)
+        result_u = zeros(n)
         count = 0
         for i = 1:n
             count += 1
@@ -14,43 +15,48 @@ module basis_improved
             for j = 1:N
                 result_x[count, j] = p[j].x[1]
                 result_y[count, j] = p[j].x[2]
-                result_e[count] = compoutStatistic_basis(p, N)
+                temp = compoutStatistic_basis(p, N, σ, ϵ, r_cut)
+                result_e[count], result_u[count] = temp[1], temp[2]
             end
         end
-        return result_x, result_y, result_e
+        return result_x, result_y, result_e, result_u
     end
 
-    function compoutStatistic_basis(p, N::Int64)
-        e = 0
+    function compoutStatistic_basis(p, N::Int64, σ, ϵ, r_cut)
+        e, u = 0, 0
         for i = 1:N
-            v = 0
-            for j = 1:2
-                v += (p[i].v[j])^2
-            end
-            e += 0.5*v*p[i].m
+            e += 0.5*sum(p[i].v)^2*p[i].m
         end
-        return e
+        for i = 1:N
+            for j = 1:N
+                if i < j
+                    rmag = norm(p[i].x - p[j].x)
+                    if rmag < r_cut^2
+                        u += 4*ϵ*((σ/rmag)^12 - (σ/rmag)^6)
+                    end
+                end
+            end
+        end
+        return e, u
     end
 
     function compX_basis(p, N::Int64, dt::Real, L::Real)
         for i = 1:N
             updateX(p[i], dt)
-            ##Reflecting boundaries
+            ##Periodic boundaries
             for j = 1:2
                 if p[i].x[j] <= 0
-                    p[i].v[j] = -p[i].v[j]
-                    p[i].x[j] = 1e-6
+                    p[i].x[j] += L
                 end
                 if p[i].x[j] > L
-                    p[i].v[j] = -p[i].v[j]
-                    p[i].x[j] = L
+                    p[i].x[j] -= L
                 end
             end
         end
     end
 
     function updateX(p, dt)
-        p.x = p.x + dt*(p.v + (dt*0.5/p.m)*p.F)
+        p.x += dt*p.v + (dt^2)*(1/2).*p.F
         p.F_old = p.F
     end
 
@@ -71,10 +77,11 @@ module basis_improved
 
     function force(p1, p2, r_cut, σ, ϵ)
         rmag = norm(p1.x - p2.x)
-        r_vector = (p2.x - p1.x)/rmag ## Normalized vector
+        r_vector = (p1.x - p2.x)/rmag ## Normalized vector
         if rmag <= r_cut
-            s = (σ/rmag)^6
-            return 24ϵ*(s)*(1-2s)*r_vector
+            r2 = 1/rmag^2
+            r6 = r2^3
+            return 48*r2*r6*ϵ*(r6 - .5)*r_vector
         else
             return [0, 0]
         end

@@ -5,13 +5,15 @@
         result_x = zeros(n, N)
         result_y = zeros(n, N)
         result_e = zeros(n)
+        result_u = zeros(n)
         count = 0
         for i = 1:n
             count += 1
             compX_LC(grid, dt, r_cut, L, nc)
-            compF_LC(grid, σ, ϵ, r_cut, nc)
+            u = compF_LC(grid, σ, ϵ, r_cut, nc)
             compV_LC(grid, dt, nc)
             z = 0
+            result_u[count] += u
             for i in Iterators.product(1:nc, 1:nc) |> collect
                 if length(grid[i[1], i[2]]) > 0 && count <= n
                     for k in grid[i[1], i[2]]
@@ -23,12 +25,12 @@
                 end
             end
         end
-        return result_x, result_y, result_e
+        return result_x, result_y, result_e, result_u
     end
 
     function compoutStatistic_LC(k)
-        v = norm(k.v)
-        return .5*k.m*v^2
+        ke = .5*(k.v[1]^2 + k.v[2]^2)*k.m
+        return ke
     end
 
     function compX_LC(grid, dt, r_cut, L, nc)
@@ -48,31 +50,35 @@
     end
 
     function compF_LC(grid, σ, ϵ, r_cut, nc)
+        u = 0
         for i in Iterators.product(1:nc, 1:nc) |> collect
             for p1 in grid[i[1], i[2]]
                 for j in neighbour_cells(i[1], i[2])
                     for p2 in grid[j[1], j[2]]
                         if p1 != p2
                             p1.F =  force(p1, p2, σ, ϵ, r_cut)
+                            r = norm(p1.x-p2.x)
+                            u += 4*ϵ*((σ/r)^12 - (σ/r)^6)
                         end
                     end
                 end
             end
         end
+        return u
     end
 
     function moveParticles_LC(grid, nc, L, r_cut)
         for i in Iterators.product(1:nc, 1:nc) |> collect
             for j in grid[i[1], i[2]]
-                # Reflecting boundaries
+                # Periodic boundaries
                 for m = 1:2
-                    if j.x[m] <= 0
+                    if j.x[m] < 0
+                        j.x[m] = -j.x[m]
                         j.v[m] = -j.v[m]
-                        j.x[m] = 1e-6 #Small positive required
                     end
                     if j.x[m] > L 
+                        j.x[m] = L - j.x[m] % L
                         j.v[m] = -j.v[m]
-                        j.x[m] = L
                     end
                 end
             end
@@ -88,12 +94,13 @@
         end
     end
 
-    function force(p1, p2, σ, ϵ, r_cut)
+    function force(p1, p2, r_cut, σ, ϵ)
         rmag = norm(p1.x - p2.x)
-        r_vector = (p2.x - p1.x)/rmag ## Normalized vector
+        r_vector = (p1.x - p2.x)/rmag ## Normalized vector
         if rmag <= r_cut
-            s = (σ/rmag)^6
-            return 24ϵ*(s)*(1-2s)*r_vector
+            r2 = 1/rmag^2
+            r6 = r2^3
+            return 48*r2*r6*(r6 - .5)*r_vector
         else
             return [0, 0]
         end
@@ -114,8 +121,8 @@
     function run(particles, dt, t_end, r_cut, σ, ϵ, L, nc)
         N, n = length(particles), Int(t_end/dt)
         grid = grid_init(particles, nc, L, r_cut)
-        result_x, result_y, result_e = timeIntegration_LC(0, dt, t_end, grid, N, n, r_cut, σ, ϵ, L, nc)
-        return result_x, result_y, result_e
+        result_x, result_y, result_e, result_u = timeIntegration_LC(0, dt, t_end, grid, N, n, r_cut, σ, ϵ, L, nc)
+        return result_x, result_y, result_e, result_u
     end
 
     function grid_init(particles, nc, L, r_cut)
