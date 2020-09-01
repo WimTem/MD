@@ -13,20 +13,24 @@ function uniform_sampler(a, b)
     return rand(2,1)*(b-a) .+ a
 end
 
-uniform_sampler(1,2)
-
 particles = []
 
 for i = 1:10
-    push!(particles, Particle.p(m, uniform_sampler(5,20), uniform_sampler(-3,3), [0,0], [0,0]))
+    push!(particles, Particle.p(m, uniform_sampler(5,20), uniform_sampler(-1,1), [0,0], [0,0]))
 end
 
 
-x, y, e, u = @time LC_verlet.run(particles, 1e-3, 10,r_cut, σ, ϵ, L, nc)
+x, y, e, u = @time LC_verlet.run(particles, 1e-2, 10,r_cut, σ, ϵ, L, nc)
 
-scatter(x[1:100:end], y[1:100:end],title="N=10, t:0->10, dt:1e-3")
+
+
+plot(e, legend=:outerleft, label="Kin E")
+plot!(u, label="Pot E")
+plot!((e+u), label="Total Energy")
+savefig("./images/10particles_energy_LC.pdf")
+
+scatter(x, y,title="N=10, t:0->1e2, dt:1e-2")
 savefig("./images/10particles_trajectory_basis.pdf")
 
-plot(e[1:100:end], legend=:outerleft, label="Kin E")
-plot!(u[1:100:end], label="Pot E")
-plot!(e[1:100:end]+u[1:100:end], label="Total Energy")
+
+28.4 % 25 + 25

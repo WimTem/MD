@@ -20,7 +20,7 @@
                         z += 1
                         result_x[count, z] = k.x[1]
                         result_y[count, z] = k.x[2]
-                        result_e[count] += compoutStatistic_LC(k)
+                        result_e[count] += compoutKineticEnergy_LC(k)
                     end
                 end
             end
@@ -28,9 +28,8 @@
         return result_x, result_y, result_e, result_u
     end
 
-    function compoutStatistic_LC(k)
-        ke = .5*(k.v[1]^2 + k.v[2]^2)*k.m
-        return ke
+    function compoutKineticEnergy_LC(k)
+        return .5*(k.v[1]^2 + k.v[2]^2)/k.m
     end
 
     function compX_LC(grid, dt, r_cut, L, nc)
@@ -45,7 +44,7 @@
     end
 
     function updateX(p, dt)
-        p.x = p.x + dt*(p.v + (dt*0.5/p.m)*p.F)
+        p.x = p.x + dt*p.v + dt*dt*(p.F)*(1/p.m)
         p.F_old = p.F
     end
 
@@ -53,12 +52,12 @@
         u = 0
         for i in Iterators.product(1:nc, 1:nc) |> collect
             for p1 in grid[i[1], i[2]]
-                for j in neighbour_cells(i[1], i[2])
+                for j in neighbour_cells(i[1], i[2], nc)
                     for p2 in grid[j[1], j[2]]
                         if p1 != p2
-                            p1.F =  force(p1, p2, σ, ϵ, r_cut)
+                            p1.F = force(p1, p2, σ, ϵ, r_cut)
                             r = norm(p1.x-p2.x)
-                            u += 4*ϵ*((σ/r)^12 - (σ/r)^6)
+                            u += 4*ϵ*((σ/r)^12 - (σ/r)^6) - 4*ϵ*((σ/r_cut)^12 - (σ/r_cut)^6)
                         end
                     end
                 end
@@ -70,21 +69,25 @@
     function moveParticles_LC(grid, nc, L, r_cut)
         for i in Iterators.product(1:nc, 1:nc) |> collect
             for j in grid[i[1], i[2]]
-                # Periodic boundaries
-                for m = 1:2
-                    if j.x[m] < 0
-                        j.x[m] = -j.x[m]
-                        j.v[m] = -j.v[m]
-                    end
-                    if j.x[m] > L 
-                        j.x[m] = L - j.x[m] % L
-                        j.v[m] = -j.v[m]
+            # Periodic boundaries
+                for k = 1:2
+                    if j.x[k] <= 0
+                        j.x[k] = (j.x[k] % L) + L
+                    elseif j.x[k] > L
+                        j.x[k] = j.x[k] % L 
                     end
                 end
             end
             ## Move back to correct cell
             for j in grid[i[1], i[2]]
-                index = div.(j.x, r_cut, RoundUp) .|> Int
+                index = (div.(j.x, r_cut, RoundUp)) .|> Int
+                for k = 1:2
+                    if index[k] == 0
+                        index[k] = 1
+                    elseif index[k] == (nc+1)
+                        index[k] = nc
+                    end
+                end
                 if i[1] != index[1]
                     push!(grid[index[1], i[2]], splice!(grid[i[1], i[2]], findfirst(x-> x == j, grid[i[1], i[2]])))
                 elseif i[2] != index[2]
@@ -96,11 +99,10 @@
 
     function force(p1, p2, r_cut, σ, ϵ)
         rmag = norm(p1.x - p2.x)
-        r_vector = (p1.x - p2.x)/rmag ## Normalized vector
+        r_vector = (rmag^-1).*(p1.x - p2.x) ## Normalized vector
         if rmag <= r_cut
-            r2 = 1/rmag^2
-            r6 = r2^3
-            return 48*r2*r6*(r6 - .5)*r_vector
+            r6 = (σ/rmag)^6
+            return 24*ϵ/rmag*(2*r6^2 - r6).*r_vector
         else
             return [0, 0]
         end
@@ -115,7 +117,7 @@
     end
 
     function updateV(p, dt)
-        p.v = p.v + (dt*0.5/p.m)*(p.F + p.F_old)
+        p.v = p.v + 0.5* (p.F)*dt/p.m
     end
 
     function run(particles, dt, t_end, r_cut, σ, ϵ, L, nc)
@@ -138,32 +140,12 @@
     end
     
     ### Auxiliary functions ###
-
-    function legal(x)
-        return filter!(e->1<=e<=10, x-1:x+1 |> collect)
+    function legal(x, nc)
+        return filter!(e->1<=e<=nc, x-1:x+1 |> collect)
     end
     
-    function neighbour_cells(x, y)
-        return Iterators.product(legal(x)[1]:legal(x)[end], legal(y)[1]:legal(y)[end]) |> collect
+    function neighbour_cells(x, y, nc)
+        return Iterators.product(legal(x, nc)[1]:legal(x, nc)[end], legal(y, nc)[1]:legal(y, nc)[end]) |> collect
     end
-
-    function uniform_sampler(a, b)
-        return rand(2,1)*(b-a) .+ a
-    end
-
-    function init_x(n)
-        result = zeros(2,n)
-        for i = 1:n
-            result[:,i] = uniform_sampler(0, 2.5)
-        end
-        return result
-    end
-
-    function init_v(n)
-        result = zeros(2,n)
-        for i = 1:n
-            result[:, i] = uniform_sampler(-5, 5)
-        end
-        return result
-    end
+        
 end
