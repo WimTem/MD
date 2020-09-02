@@ -44,7 +44,7 @@
     end
 
     function updateX(p, dt)
-        p.x = p.x + dt*p.v + dt*dt*(p.F)*(1/p.m)
+        p.x += dt*(p.v + 0.5/p.m*p.F*dt)
         p.F_old = p.F
     end
 
@@ -55,7 +55,7 @@
                 for j in neighbour_cells(i[1], i[2], nc)
                     for p2 in grid[j[1], j[2]]
                         if p1 != p2
-                            p1.F = force(p1, p2, σ, ϵ, r_cut)
+                            p1.F += force(p1, p2, σ, ϵ, r_cut)
                             r = norm(p1.x-p2.x)
                             u += 4*ϵ*((σ/r)^12 - (σ/r)^6) - 4*ϵ*((σ/r_cut)^12 - (σ/r_cut)^6)
                         end
@@ -72,37 +72,46 @@
             # Periodic boundaries
                 for k = 1:2
                     if j.x[k] <= 0
-                        j.x[k] = (j.x[k] % L) + L
-                    elseif j.x[k] > L
-                        j.x[k] = j.x[k] % L 
+                        j.v[k] *= -1
+                        j.x[k] = 1e-6
+                    end
+                    if j.x[k] > L
+                        j.v[k] *= -1
+                        j.x[k] = L
                     end
                 end
             end
+        end
+        for i in Iterators.product(1:nc, 1:nc) |> collect
             ## Move back to correct cell
             for j in grid[i[1], i[2]]
+                #Find true index
                 index = (div.(j.x, r_cut, RoundUp)) .|> Int
                 for k = 1:2
                     if index[k] == 0
-                        index[k] = 1
-                    elseif index[k] == (nc+1)
-                        index[k] = nc
+                        index[k] += 1
+                    elseif index[k] == (L+1)
+                        index[k] -= 1
                     end
                 end
                 if i[1] != index[1]
-                    push!(grid[index[1], i[2]], splice!(grid[i[1], i[2]], findfirst(x-> x == j, grid[i[1], i[2]])))
+                    tmp = splice!(grid[i[1], i[2]], findfirst(x-> x == j, grid[i[1], i[2]]))
+                    push!(grid[index[1], i[2]], tmp)
                 elseif i[2] != index[2]
-                    push!(grid[i[1], index[2]], splice!(grid[i[1], i[2]], findfirst(x-> x == j, grid[i[1], i[2]])))
+                    tmp = splice!(grid[i[1], i[2]], findfirst(x-> x == j, grid[i[1], i[2]]))
+                    push!(grid[i[1], index[2]], tmp)
                 end
             end
         end
     end
 
     function force(p1, p2, r_cut, σ, ϵ)
+        p1.F, p2.F = [0,0], [0,0]
         rmag = norm(p1.x - p2.x)
-        r_vector = (rmag^-1).*(p1.x - p2.x) ## Normalized vector
+        r_vector = (p2.x - p1.x)/rmag ## Normalized vector
         if rmag <= r_cut
-            r6 = (σ/rmag)^6
-            return 24*ϵ/rmag*(2*r6^2 - r6).*r_vector
+            s = (σ/rmag)^6
+            return 24ϵ*(s)*(1-2s)*r_vector
         else
             return [0, 0]
         end
@@ -117,7 +126,7 @@
     end
 
     function updateV(p, dt)
-        p.v = p.v + 0.5* (p.F)*dt/p.m
+        p.v += 0.5* (p.F + p.F_old)*dt/p.m
     end
 
     function run(particles, dt, t_end, r_cut, σ, ϵ, L, nc)

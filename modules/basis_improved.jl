@@ -46,10 +46,10 @@ module basis_improved
             ##Periodic boundaries
             for j = 1:2
                 if p[i].x[j] <= 0
-                    p[i].x[j] += L
+                    p[i].v[j] *= -1
                 end
                 if p[i].x[j] > L
-                    p[i].x[j] -= L
+                    p[i].v[j] *= -1
                 end
             end
         end

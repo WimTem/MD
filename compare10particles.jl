@@ -22,15 +22,13 @@ end
 
 x, y, e, u = @time LC_verlet.run(particles, 1e-2, 10,r_cut, σ, ϵ, L, nc)
 
-
+particles
 
 plot(e, legend=:outerleft, label="Kin E")
 plot!(u, label="Pot E")
 plot!((e+u), label="Total Energy")
 savefig("./images/10particles_energy_LC.pdf")
 
-scatter(x, y,title="N=10, t:0->1e2, dt:1e-2")
+scatter(x, y,title="N=10, t:0->10, dt:1e-2")
 savefig("./images/10particles_trajectory_basis.pdf")
 
-
-28.4 % 25 + 25
