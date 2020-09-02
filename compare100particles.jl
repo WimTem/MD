@@ -11,8 +11,6 @@ function uniform_sampler(a, b)
     return rand(2,1)*(b-a) .+ a
 end
 
-uniform_sampler(1,2)
-
 
 particles = []
 for i = 1:22
